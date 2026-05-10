@@ -21,9 +21,9 @@ MCPB was chosen for the following reasons:
 
 **Managed runtime.** With `server.type: "uv"`, Claude Desktop automatically manages the Python runtime and all dependencies. The user never needs to install or configure anything beyond the app itself.
 
-**Secure token handling.** Claude Desktop's MCPB integration surfaces a native UI prompt for the Up Bank PAT during installation and stores it in the OS keychain. The token is never written to a plaintext config file and is injected into the server process as an environment variable at runtime. No other distribution method provides this level of security UX without significant custom implementation.
+**Secure token handling.** Claude Desktop's MCPB integration surfaces a native UI prompt for the Up Bank PAT during installation and [encyrpts it using the OS keychain](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop#h_c93f75cb39). The token is never written to a plaintext config file and is injected into the server process as an environment variable at runtime. 
 
-**Single known compatible client.** At the time of writing, Claude Desktop (macOS) is the only client the author is aware of that supports MCPB installation and the associated secure `user_config` token flow. This is an accepted constraint — the MCPB format is an emerging standard and compatibility is expected to grow.
+**Single known compatible client.** At the time of writing, Claude Desktop (macOS, Windows) is the only client the author is aware of that supports MCPB installation and the associated secure `user_config` token flow. This is an accepted constraint — the MCPB format is an emerging standard.
 
 ## Consequences
 
