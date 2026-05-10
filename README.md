@@ -9,24 +9,18 @@ This server runs **locally on your device**. All requests to the Up Bank API are
 
 However, to answer your questions, the LLM you connect this server to will retrieve your banking data (account balances, transactions, etc.) and include it in the conversation. This data is sent to whichever LLM provider you are using (e.g. Anthropic's servers if using Claude). You should be comfortable with your LLM provider's data handling and privacy policy before using this tool.
 
-**For maximum privacy**, consider connecting to a locally running LLM such as [Ollama](https://ollama.com), which keeps all data — your token, your banking data, and your conversation — entirely on your own device.
+**For complete privacy**, consider connecting to a locally running LLM such as [Ollama](https://ollama.com), which keeps all data — your token, your banking data, and your conversation — entirely on your own device.
 
-```
-Your Device
-┌─────────────────────────────────────────────────┐
-│                                                 │
-│   Claude Desktop / MCP Client                  │
-│          │                                      │
-│          │  MCP (stdio)                         │
-│          ▼                                      │
-│   Up Bank MCP Server  ──────────────────────►  │  Up Bank API
-│   (this server)       HTTPS + your token        │  (api.up.com.au)
-│          │                                      │
-└──────────┼──────────────────────────────────────┘
-           │ banking data
-           ▼
-    LLM Provider
-    (Anthropic / local Ollama / etc.)
+```mermaid
+flowchart LR
+    subgraph device["Your Device"]
+        client["Claude Desktop - MCP Client"]
+        server["Up Bank MCP Server (this server)"]
+        client -- "MCP (stdio)" --> server
+    end
+
+    server -- "HTTPS + your token" --> upbank["Up Bank API<br/>api.up.com.au"]
+    server -- "banking data" --> llm["LLM Provider<br/>(Anthropic / Ollama / etc.)"]
 ```
 
 ## Tools
@@ -59,9 +53,9 @@ Your Device
 ### Option 1 — Claude Desktop (MCPB bundle, recommended)
 
 1. Get your Up Bank token from [api.up.com.au](https://api.up.com.au)
-2. Drag `up-bank-0.1.0.mcpb` onto Claude Desktop
+2. Drag `up-bank-mcp.mcpb` onto Claude Desktop Extensions Window
 3. Enter your token in the install dialog — stored securely in your OS keychain
-4. Done — no Python or uv install required
+4. Done — no Python required (automatically handled by uv in Claude Desktop)
 
 To rebuild the bundle after making changes:
 ```bash
@@ -132,7 +126,25 @@ npx @modelcontextprotocol/inspector uv run python server/main.py
 
 ```bash
 mcpb validate manifest.json        # check manifest against schema
-mcpb pack                          # produces up-bank-0.1.0.mcpb
+mcpb pack                          # produces up-bank-mcps.mcpb
 ```
 
 The `.mcpb` file can be dragged into Claude Desktop to install. Re-pack after any code changes before distributing.
+
+## Releasing a new version
+
+1. Bump the version in `manifest.json` and `pyproject.toml` (e.g. `0.1.0` → `0.2.0`)
+
+2. Pack a new bundle:
+```bash
+mcpb pack
+```
+
+3. Create a GitHub release and attach the bundle:
+```bash
+gh release create v0.2.0 ./up-bank-mcp.mcpb \ 
+  --title "v0.2.0" \
+  --notes "Describe what changed."
+```
+
+The download URL in `docs/index.html` uses `/releases/latest/download/`
