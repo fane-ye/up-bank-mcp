@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "up-bank",
+  "display_name": "Up Bank MCP (Unofficial)",
+  "version": "1.0.0",
+  "description": "Full Up Bank API — balances, transactions, categories, tags, webhooks.",
+  "author": {
+    "name": "fane-ye"
+  },
+  "icon": "icon.png",
+  "server": {
+    "type": "uv",
+    "entry_point": "server/main.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "server/main.py"],
+      "env": {
+        "UP_PAT": "${user_config.upToken}"
+      }
+    }
+  },
+  "user_config": {
+    "upToken": {
+      "type": "string",
+      "title": "Up Bank API Token",
+      "description": "Personal access token from api.up.com.au",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin"],
+    "runtimes": {
+      "python": ">=3.12"
+    }
+  }
+}

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Up Bank MCP — Setup Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --up: #ff6b35;
+      --up-light: #fff4f0;
+      --text: #1a1a1a;
+      --muted: #666;
+      --border: #e5e7eb;
+      --bg: #f7f8fa;
+      --white: #fff;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* ── Hero ── */
+    .hero {
+      background: #1a1a2e;
+      color: white; text-align: center;
+      padding: 56px 24px 72px;
+    }
+    .up-logo {
+      display: inline-flex; align-items: center; gap: 12px;
+      margin-bottom: 28px;
+    }
+    .up-logo svg { width: 52px; height: 52px; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2)); }
+    .up-logo-text { font-size: 28px; font-weight: 800; letter-spacing: -1px; opacity: 0.95; }
+    .hero h1 { font-size: clamp(26px, 5vw, 46px); font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; line-height: 1.15; }
+    .hero h1 .unofficial { color: #ff4444; background: rgba(255,255,255,0.12); border-radius: 6px; padding: 2px 8px; font-size: 0.7em; vertical-align: middle; }
+    .hero p { font-size: clamp(15px, 2.5vw, 19px); opacity: 0.9; max-width: 520px; margin: 12px auto 32px; }
+    .cta-group { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .hero .cta {
+      display: inline-block; background: #f04e23; color: white;
+      font-weight: 700; font-size: 16px; padding: 14px 36px;
+      border-radius: 100px; text-decoration: none;
+      box-shadow: 0 4px 20px rgba(240,78,35,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .hero .cta:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(240,78,35,0.5); }
+    .hero .cta-sub { font-size: 13px; opacity: 0.55; }
+
+    /* ── Demo section ── */
+    .demo-section { background: #1a1a2e; padding: 64px 24px; }
+    .demo-section h2 { text-align: center; color: white; font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .demo-section .demo-sub { text-align: center; color: rgba(255,255,255,0.5); font-size: 15px; margin-bottom: 36px; }
+    .chat-window {
+      max-width: 780px; margin: 0 auto;
+      background: #ffffff; border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+    }
+    .chat-titlebar {
+      background: #f2f2f7; padding: 12px 20px;
+      display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .chat-titlebar .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .chat-titlebar .dot.r { background: #ff5f57; }
+    .chat-titlebar .dot.y { background: #febc2e; }
+    .chat-titlebar .dot.g { background: #28c840; }
+    .chat-titlebar .title { color: #999; font-size: 13px; margin-left: 8px; }
+    .chat-body { padding: 28px 24px; display: flex; flex-direction: column; gap: 20px; background: #f7f8fa; }
+
+    /* messages */
+    .msg { display: flex; gap: 12px; align-items: flex-start; }
+    .msg.user { flex-direction: row-reverse; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .avatar.user-av { background: #f04e23; color: white; }
+    .avatar.ai-av { background: #7c3aed; color: white; font-size: 12px; }
+    .bubble {
+      max-width: 85%; padding: 12px 16px; border-radius: 16px;
+      font-size: 14px; line-height: 1.55;
+    }
+    .msg.user .bubble { background: #f04e23; color: white; border-top-right-radius: 4px; }
+    .msg.ai .bubble { background: #ffffff; color: #1a1a1a; border-top-left-radius: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .bubble p { margin-bottom: 8px; }
+    .bubble p:last-child { margin-bottom: 0; }
+
+    /* tool call pill */
+    .tool-call {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 100px; padding: 4px 12px; font-size: 12px;
+      color: #7c3aed; margin-bottom: 10px;
+    }
+    .tool-call .spinner { animation: spin 1.2s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* sankey inside chat */
+    .sankey-wrap {
+      background: #f7f8fa; border-radius: 12px; margin-top: 12px;
+      padding: 16px 12px 12px; border: 1px solid #e5e7eb;
+      overflow: hidden;
+    }
+    .sankey-wrap .chart-title { color: #999; font-size: 12px; margin-bottom: 8px; letter-spacing: 0.3px; }
+    .sankey-label { font-family: -apple-system, sans-serif; font-size: 11px; fill: #333; }
+    .sankey-sublabel { font-family: -apple-system, sans-serif; font-size: 10px; fill: #888; }
+    .sankey-link { opacity: 0.5; transition: opacity 0.2s; cursor: pointer; }
+    .sankey-link:hover { opacity: 0.85; }
+
+    /* ── Layout ── */
+    .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 48px 0 8px; }
+    section h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+
+    /* notice */
+    .notice {
+      background: #fff8f0; border: 1px solid #ffd4b8; border-radius: var(--radius);
+      padding: 18px 22px; margin: 36px 0 0;
+    }
+    .notice h3 { font-size: 14px; font-weight: 600; color: var(--up); margin-bottom: 4px; }
+    .notice p { font-size: 14px; color: var(--muted); }
+    .notice a { color: var(--up); }
+
+    /* requirements */
+    .req-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .req-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: 100px; padding: 8px 16px; font-size: 14px;
+      box-shadow: var(--shadow);
+    }
+    .req-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+    /* steps */
+    .steps { display: flex; flex-direction: column; gap: 18px; }
+    .step {
+      display: flex; gap: 18px;
+      background: var(--white); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .step-num {
+      flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+      background: var(--up); color: white; font-weight: 700; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-body h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .step-body p { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+    .step-body p:last-child { margin-bottom: 0; }
+    .step-body a { color: var(--up); font-weight: 500; }
+    .token-eg { background: #1a1a2e; color: #ff9a3c; font-family: "SF Mono", monospace; font-size: 12px; padding: 10px 14px; border-radius: 8px; margin-top: 8px; word-break: break-all; }
+    .warn { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #92400e; margin-top: 10px; }
+    .screen-hint { background: var(--bg); border: 2px dashed var(--border); border-radius: 8px; padding: 16px; margin-top: 10px; text-align: center; font-size: 13px; color: var(--muted); }
+
+    /* prompts */
+    .prompt-list { display: flex; flex-direction: column; gap: 10px; }
+    .prompt-item { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; font-size: 15px; box-shadow: var(--shadow); }
+    .prompt-item::before { content: "💬 "; }
+
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--border); margin-top: 40px; }
+    footer a { color: var(--up); }
+
+    @media (max-width: 500px) {
+      .step { flex-direction: column; gap: 10px; }
+      .req-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="up-logo">
+    <img src="../icon.png" alt="Up Bank logo" style="width:56px;height:56px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.25);" />
+    <div style="text-align:left;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="up-logo-text">Up Bank MCP</span>
+        <span style="background:rgba(220,38,38,0.25);border:1px solid rgba(220,38,38,0.5);color:#fca5a5;font-size:11px;font-weight:600;border-radius:5px;padding:2px 7px;letter-spacing:0.4px;">Unofficial</span>
+        <span style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;border-radius:5px;padding:2px 7px;letter-spacing:0.4px;">Open Source</span>
+      </div>
+      <div style="font-size:13px;opacity:0.55;margin-top:2px;">MIT licence · Not affiliated with Up or Bendigo Bank</div>
+    </div>
+  </div>
+  <h1>Ask AI about your money</h1>
+  <p>Connect Claude to your Up Bank account. Get real insights — balances, spending breakdowns, beautiful charts — all from your own device.</p>
+  <div class="cta-group">
+    <a href="https://github.com/fane-ye/up-bank-mcp/releases/latest/download/up-bank-0.1.0.mcpb" class="cta">⬇ Download for Claude Desktop</a>
+    <span class="cta-sub">Free · macOS &amp; Windows · Requires Claude Desktop</span>
+  </div>
+</div>
+
+<!-- ── Demo ── -->
+<div class="demo-section">
+  <h2>See what you can ask</h2>
+  <p class="demo-sub">Real questions. Real answers from your own account.</p>
+  <div class="chat-window">
+    <div class="chat-titlebar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:10px;">
+        <!-- Up logo pill -->
+        <div style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px 3px 4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <img src="../icon.png" alt="Up" style="width:16px;height:16px;border-radius:4px;" />
+          <span style="color:#333;font-size:11px;font-weight:600;">Up Bank MCP</span>
+        </div>
+        <span style="color:#ccc;font-size:11px;">+</span>
+        <span style="color:#888;font-size:11px;">Claude Desktop</span>
+        <span style="color:#ddd;font-size:11px;">·</span>
+        <span style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;font-size:10px;border-radius:4px;padding:1px 6px;letter-spacing:0.3px;">unofficial · open source</span>
+      </div>
+    </div>
+    <div class="chat-body">
+
+      <!-- Q1 -->
+      <div class="msg user">
+        <div class="avatar user-av">F</div>
+        <div class="bubble">make me a diagram of my income splitting into savings to show my crush i'm a financially responsible guy 📊</div>
+      </div>
+      <div class="msg ai">
+        <div class="avatar ai-av">AI</div>
+        <div class="bubble">
+          <div class="tool-call">⚡ list_accounts · list_transactions</div>
+          <p>Here you go — you're putting <strong>67% of your income straight into savings</strong> across 8 buckets before you even think about spending. Your crush will be impressed. 😄</p>
+          <div class="sankey-wrap">
+            <div class="chart-title">MONTHLY INCOME FLOW</div>
+            <div style="position:relative;width:100%;">
+              <div id="tooltip" style="position:fixed;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:7px 12px;font-size:12px;pointer-events:none;color:#333;display:none;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.1);"></div>
+              <svg id="sankey" width="100%" viewBox="0 0 560 360" role="img">
+                <title>Monthly income Sankey</title>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="msg user">
+        <div class="avatar user-av">F</div>
+        <div class="bubble">how much did I spend on restaurants this month compared to this time last year?</div>
+      </div>
+      <div class="msg ai">
+        <div class="avatar ai-av">AI</div>
+        <div class="bubble">
+          <div class="tool-call">⚡ list_transactions · list_transactions</div>
+          <p><strong>This month:</strong> $623 across 18 visits<br><strong>Same period last year:</strong> $341 across 11 visits</p>
+          <p>That's up <strong>83%</strong> year-on-year. Either you got a lot more social, discovered better restaurants, or both. The data isn't judging — but I am, a little. 🍝</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Privacy -->
+  <div class="notice" style="margin-top:40px;">
+    <h3>🔒 Your token stays on your device</h3>
+    <p>All Up Bank API requests are made locally from your Mac or PC using your Up Personal Access Token to authenticate. Your Personal Access Token is stored in your OS keychain — <strong>not with Anthropic or Claude</strong>.</p>
+    <p style="margin-top:16px;"><strong>⚠️ Data Privacy Note</strong></p>
+    <p style="margin-top:6px;">However, to answer your questions, your banking data (balances, transactions, etc.) is sent to your AI provider. Review <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic's privacy policy</a> before use. For maximum privacy, connect a locally running model like <a href="https://ollama.com" target="_blank">Ollama</a> — your data never leaves your machine.</p>
+  </div>
+
+  <!-- Requirements -->
+  <section>
+    <h2>Before you start</h2>
+    <div class="req-row">
+      <div class="req-pill"><span class="dot"></span> macOS or Windows</div>
+      <div class="req-pill"><span class="dot"></span> Claude Desktop installed</div>
+      <div class="req-pill"><span class="dot"></span> An Up Bank account</div>
+    </div>
+    <p style="font-size:14px;color:var(--muted);">Don't have Claude Desktop? <a href="https://claude.ai/download" target="_blank" style="color:var(--up);">Download it free from Anthropic →</a></p>
+  </section>
+
+  <!-- Setup -->
+  <section>
+    <h2>Setup — 3 steps</h2>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>Get your Up Bank personal access token</h3>
+          <p>Open the link below while logged into Up. Click <strong>Create personal access token</strong>, give it a name like "Claude", and copy it — you'll only see it once.</p>
+          <p><a href="https://api.up.com.au/getting_started" target="_blank">api.up.com.au/getting_started →</a></p>
+          <div class="token-eg">up:yeah:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+          <div class="warn">⚠️ Keep this token private — it grants read access to your account. Do not share it or put it in a git repo.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>Install the bundle into Claude Desktop</h3>
+          <p>Download the file below, then install it using either method:</p>
+          <p><a href="https://github.com/fane-ye/up-bank-mcp/releases/latest/download/up-bank-0.1.0.mcpb">⬇ Download up-bank-0.1.0.mcpb</a></p>
+          <p><strong>Option A</strong> — Double-click the <code>.mcpb</code> file and follow the prompts.</p>
+          <p><strong>Option B</strong> — Open Claude Desktop → <strong>Settings → Extensions</strong> → drag the <code>.mcpb</code> file into the window.</p>
+          <div class="screen-hint">📦 Claude Desktop · Settings → Extensions → drag .mcpb here</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>Paste your token in the install dialog</h3>
+          <p>Claude Desktop will show an <strong>"Up Bank API Token"</strong> field. Paste your token from Step 1 and click Install.</p>
+          <p>Your token is saved to your OS keychain — Claude Desktop will never ask for it again.</p>
+          <div class="screen-hint">🔑 Paste token → Install → Done</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h3>Restart Claude Desktop</h3>
+          <p>Fully quit Claude Desktop and reopen it. The Up Bank tools will be active in your next conversation.</p>
+          <div class="screen-hint">⚡ Quit → Reopen → Start asking about your money</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Try it -->
+  <section>
+    <h2>Things to try</h2>
+    <div class="prompt-list">
+      <div class="prompt-item">"What are my current account balances?"</div>
+      <div class="prompt-item">"How much did I spend on groceries this month?"</div>
+      <div class="prompt-item">"Show me a breakdown of my spending by category as a chart."</div>
+      <div class="prompt-item">"What were my 5 biggest transactions last week?"</div>
+      <div class="prompt-item">"Am I saving more than I'm spending?"</div>
+    </div>
+  </section>
+
+  <!-- Troubleshooting -->
+  <section>
+    <h2>Troubleshooting</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-body">
+          <h3>Claude says it doesn't have Up Bank tools</h3>
+          <p>Quit and reopen Claude Desktop. If it persists, check the server is enabled under <strong>Settings → Extensions</strong>.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h3>"Token invalid" or authentication error</h3>
+          <p>Your token may have expired. Visit <a href="https://api.up.com.au/getting_started" target="_blank">api.up.com.au</a> to create a new one, then reinstall the bundle.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-body">
+          <h3>Need to update your token</h3>
+          <p>Uninstall from Claude Desktop Settings, then drag in the <code>.mcpb</code> file again to re-enter your token.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <p>Up Bank MCP is unofficial and not affiliated with Up or Bendigo Bank. &nbsp;·&nbsp; <a href="https://github.com/fane-ye/up-bank-mcp" target="_blank">View source on GitHub</a> &nbsp;·&nbsp; <a href="https://developer.up.com.au" target="_blank">Up Bank API docs</a></p>
+</footer>
+
+<!-- D3 Sankey (demo only) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+<script>
+const nodes = [
+  { id: 'income',    label: 'Income',           sub: '$10,000' },
+  { id: 'savings',   label: 'Savings 💀',        sub: '$6,200' },
+  { id: 'bills',     label: 'Bills',             sub: '$2,100' },
+  { id: 'fun',       label: 'Fun money',         sub: '$1,200' },
+  // savings buckets
+  { id: 'house',     label: 'Future house 🏠',   sub: '$1,500' },
+  { id: 'invest',    label: 'Investments 📈',     sub: '$1,200' },
+  { id: 'emergency', label: 'Emergency 🚨',       sub: '$900' },
+  { id: 'holiday',   label: 'Holiday ✈️',         sub: '$800' },
+  { id: 'car',       label: 'New car 🚗',         sub: '$700' },
+  { id: 'buffer',    label: 'Buffer 🛡',          sub: '$600' },
+  { id: 'clothes',   label: 'Clothes 👗',         sub: '$500' },
+];
+
+const links = [
+  { source: 'income',  target: 'savings',   value: 6200 },
+  { source: 'income',  target: 'bills',     value: 2100 },
+  { source: 'income',  target: 'fun',       value: 1200 },
+  { source: 'savings', target: 'house',     value: 1500 },
+  { source: 'savings', target: 'invest',    value: 1200 },
+  { source: 'savings', target: 'emergency', value: 900 },
+  { source: 'savings', target: 'holiday',   value: 800 },
+  { source: 'savings', target: 'car',       value: 700 },
+  { source: 'savings', target: 'buffer',    value: 600 },
+  { source: 'savings', target: 'clothes',   value: 500 },
+];
+
+const pal = {
+  income: '#AFA9EC', savings: '#5DCAA5', bills: '#F0997B', fun: '#F4C0D1', bucket: '#9FE1CB',
+};
+const colorMap = {
+  income: pal.income, savings: pal.savings, bills: pal.bills, fun: pal.fun,
+  house: pal.bucket, invest: pal.bucket, emergency: pal.bucket, holiday: pal.bucket,
+  car: pal.bucket, buffer: pal.bucket, clothes: pal.bucket,
+};
+
+const W = 560, H = 360;
+const margin = { top: 12, right: 120, bottom: 12, left: 8 };
+const svg = d3.select('#sankey');
+
+const sankey = d3.sankey()
+  .nodeId(d => d.id)
+  .nodeWidth(10)
+  .nodePadding(5)
+  .extent([[margin.left, margin.top], [W - margin.right, H - margin.bottom]]);
+
+const nodeObjs = nodes.map(d => ({ ...d }));
+const linkObjs = links.map(d => ({ ...d }));
+const graph = sankey({ nodes: nodeObjs, links: linkObjs });
+
+const defs = svg.append('defs');
+graph.links.forEach((l, i) => {
+  const g = defs.append('linearGradient').attr('id', `lg${i}`)
+    .attr('gradientUnits', 'userSpaceOnUse')
+    .attr('x1', l.source.x1).attr('x2', l.target.x0);
+  g.append('stop').attr('offset', '0%').attr('stop-color', colorMap[l.source.id]).attr('stop-opacity', 0.65);
+  g.append('stop').attr('offset', '100%').attr('stop-color', colorMap[l.target.id]).attr('stop-opacity', 0.65);
+});
+
+const tooltip = document.getElementById('tooltip');
+svg.append('g').selectAll('path').data(graph.links).join('path')
+  .attr('class', 'sankey-link')
+  .attr('d', d3.sankeyLinkHorizontal())
+  .attr('fill', 'none')
+  .attr('stroke', (l, i) => `url(#lg${i})`)
+  .attr('stroke-width', d => Math.max(1.5, d.width))
+  .on('mousemove', (e, d) => {
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top = (e.clientY - 28) + 'px';
+    tooltip.textContent = `${d.source.label} → ${d.target.label}: $${d.value.toLocaleString()}`;
+  })
+  .on('mouseleave', () => { tooltip.style.display = 'none'; });
+
+const nodeG = svg.append('g').selectAll('g').data(graph.nodes).join('g').attr('class', 'sankey-node');
+nodeG.append('rect')
+  .attr('x', d => d.x0).attr('y', d => d.y0)
+  .attr('width', d => d.x1 - d.x0).attr('height', d => Math.max(2, d.y1 - d.y0))
+  .attr('rx', 3).attr('fill', d => colorMap[d.id]).attr('stroke', 'none');
+
+nodeG.append('text').attr('class', 'sankey-label')
+  .attr('x', d => d.x1 + 5).attr('y', d => (d.y0 + d.y1) / 2 - 5)
+  .attr('dy', '0.35em').attr('text-anchor', 'start').text(d => d.label);
+
+nodeG.append('text').attr('class', 'sankey-sublabel')
+  .attr('x', d => d.x1 + 5).attr('y', d => (d.y0 + d.y1) / 2 + 8)
+  .attr('dy', '0.35em').attr('text-anchor', 'start').text(d => d.sub);
+</script>
+
+</body>
+</html>
