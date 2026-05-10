@@ -262,7 +262,7 @@
     <h3>🔒 Your token stays on your device</h3>
     <p>All Up Bank API requests are made locally from your Mac or PC using your Up Personal Access Token to authenticate. Your Personal Access Token is stored in your OS keychain — <strong>not with Anthropic or Claude</strong>.</p>
     <p style="margin-top:16px;"><strong>⚠️ Data Privacy Note</strong></p>
-    <p style="margin-top:6px;">However, to answer your questions, your banking data (balances, transactions, etc.) is sent to your AI provider. Review <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic's privacy policy</a> before use. For maximum privacy, connect a locally running model like <a href="https://ollama.com" target="_blank">Ollama</a> — your data never leaves your machine.</p>
+    <p style="margin-top:6px;">However, to answer your questions, your banking data (balances, transactions, etc.) is sent to your AI provider. Review <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic's privacy policy</a> before use. For maximum privacy, connect a locally running model like <a href="https://ollama.com" target="_blank">Ollama</a> — your data never leaves your machine. <a href="#privacy" style="white-space:nowrap;">⚠️ Read the full data privacy information →</a></p>
   </div>
 
   <!-- Requirements -->
@@ -360,6 +360,55 @@
           <p>Uninstall from Claude Desktop Settings, then drag in the <code>.mcpb</code> file again to re-enter your token.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Data Privacy -->
+  <section id="privacy">
+    <h2>⚠️ Data Privacy Information</h2>
+
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px;">Information in this section is based on Anthropic's help article <a href="https://privacy.claude.com/en/articles/10023580-is-my-data-used-for-model-training" target="_blank">"Is my data used for model training?"</a> as at 10 May 2026. Anthropic's policies may change — check the source for the latest.</p>
+
+    <div class="step" style="flex-direction:column;gap:12px;margin-bottom:18px;">
+      <h3 style="font-size:16px;font-weight:600;">How data flows when you use this tool</h3>
+      <p style="font-size:14px;color:var(--muted);">This MCP server runs locally on your machine and is only queried by Claude when you send a prompt and Claude determines it needs to retrieve data from the Up Bank API to answer your question. Whatever data is retrieved and returned will be loaded into Claude's context window — the same place your conversation lives.</p>
+      <p style="font-size:14px;color:var(--muted);">If you are currently comfortable putting your bank's entire transaction history into Claude in the form of exported spreadsheets or bank statement PDFs, this tool is essentially doing the same thing — just automated and on-demand.</p>
+      <p style="font-size:14px;color:var(--muted);">Use the information below to decide if this tool is right for you.</p>
+    </div>
+
+    <div class="steps">
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">📤 Your banking data is sent to Anthropic's servers</h3>
+        <p style="font-size:14px;color:var(--muted);">When Claude calls a tool (e.g. <code>list_transactions</code>), the results — account names, balances, merchant names, amounts, dates — are transmitted to Anthropic's servers for processing. This is governed by Anthropic's <a href="https://www.anthropic.com/privacy" target="_blank">privacy policy</a>.</p>
+      </div>
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">🧠 Is your banking data used to train Claude?</h3>
+        <p style="font-size:14px;color:var(--muted);">According to Anthropic, raw content from MCP servers is <strong>excluded from training data</strong> — unless it is directly copied into the chat itself. However, any banking data that Claude summarises or quotes in its responses becomes part of the conversation and <em>may</em> be used for training if you have model improvement enabled in your account settings.</p>
+        <p style="font-size:14px;color:var(--muted);margin-top:6px;"><strong>Recommended:</strong> disable model improvement for Claude, or use Incognito Mode for sensitive conversations. See below.</p>
+      </div>
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">🔒 Option 1 — Disable model improvement</h3>
+        <p style="font-size:14px;color:var(--muted);">In Claude, go to <strong>Settings → Privacy → Model Improvement</strong> and turn it off. This prevents your conversations from being used to train Claude. This applies to all your conversations, not just this tool.</p>
+      </div>
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">🕶️ Option 2 — Use Incognito Mode</h3>
+        <p style="font-size:14px;color:var(--muted);">Claude's Incognito Mode ensures that conversation is <strong>never used to improve Claude</strong>, even if model improvement is enabled globally in your settings. Use Incognito Mode for any conversation where you're asking about your finances. In Claude Desktop, start a new Incognito chat from the conversation menu.</p>
+      </div>
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">🗂️ Claude may retrieve more data than you expect</h3>
+        <p style="font-size:14px;color:var(--muted);">A broad question like "how's my spending looking?" could cause Claude to fetch hundreds of transactions across multiple accounts. If this concerns you, ask specific, narrow questions and review the tool calls Claude makes before it answers (shown in the UI as expandable steps).</p>
+      </div>
+
+      <div class="step" style="flex-direction:column;gap:8px;">
+        <h3 style="font-size:15px;font-weight:600;">🏠 For maximum privacy: use a local model</h3>
+        <p style="font-size:14px;color:var(--muted);">If you want zero data to leave your device, connect this MCP server to a locally running model via <a href="https://ollama.com" target="_blank">Ollama</a>. Your token, your banking data, and your conversation all stay entirely on your machine. This requires a capable local model and some technical setup.</p>
+      </div>
+
     </div>
   </section>
 
