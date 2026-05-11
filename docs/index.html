@@ -184,7 +184,7 @@
     </div>
   </div>
   <h1>Ask AI about your money</h1>
-  <p>Connect Claude to your Up Bank account. Get real insights — balances, spending breakdowns, beautiful charts — all from your own device.</p>
+  <p>Connect Claude to your Up Bank account. Get real insights — balances, spending breakdowns, aesthetic charts — all from your own device.</p>
   <div class="cta-group">
     <a href="#setup" class="cta">View installation guide</a>
     <span class="cta-sub">Free · macOS &amp; Windows · Requires Claude Desktop</span>
@@ -260,9 +260,9 @@
   <!-- Privacy -->
   <div class="notice" style="margin-top:40px;">
     <h3>🔒 Your token stays on your device</h3>
-    <p>All Up Bank API requests are made locally from your Mac or PC using your Up Personal Access Token to authenticate. Your Personal Access Token is stored in your OS keychain — <strong>not with Anthropic or Claude</strong>.</p>
+    <p>All Up Bank API requests are made locally from your Mac or PC using your Up Personal Access Token to authenticate. Your Personal Access Token is encrypted — <strong>not shared with Anthropic or Claude</strong>.</p>
     <p style="margin-top:16px;"><strong>⚠️ Data Privacy Note</strong></p>
-    <p style="margin-top:6px;">However, to answer your questions, your banking data (balances, transactions, etc.) is sent to your AI provider. Review <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic's privacy policy</a> before use. For maximum privacy, connect a locally running model like <a href="https://ollama.com" target="_blank">Ollama</a> — your data never leaves your machine. <a href="#privacy" style="white-space:nowrap;">⚠️ Read the full data privacy information →</a></p>
+    <p style="margin-top:6px;">However, to answer your questions, your banking data (balances, transactions, etc.) is sent to your AI provider, but you can configure Claude to not use your data for training. Review <a href="https://www.anthropic.com/privacy" target="_blank">Anthropic's privacy policy</a> before use. For maximum privacy, connect a locally running model like <a href="https://ollama.com" target="_blank">Ollama</a> — your data never leaves your machine. <a href="#privacy" style="white-space:nowrap;">⚠️ Read the full data privacy information →</a></p>
   </div>
 
   <!-- Requirements -->
@@ -285,7 +285,7 @@
         <div class="step-num">1</div>
         <div class="step-body">
           <h3>Get your Up Bank personal access token</h3>
-          <p>Open the link below while logged into Up. Click <strong>Create personal access token</strong>, give it a name like "Claude", and copy it — you'll only see it once.</p>
+          <p>Open the link and follow the instructions to create your <strong> personal access token</strong>. Copy the token into your clipboard.</p>
           <p><a href="https://api.up.com.au/getting_started" target="_blank">api.up.com.au/getting_started →</a></p>
           <div class="token-eg">up:yeah:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
           <div class="warn">⚠️ Keep this token private — it grants read access to your account. Do not share it or put it in a git repo.</div>
@@ -295,9 +295,12 @@
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h3>Install the bundle into Claude Desktop</h3>
+          <h3>Install the Up Bank Local MCP onto Claude Desktop</h3>
           <p>Download the file below, then install it using either method:</p>
-          <p><a href="https://github.com/fane-ye/up-bank-mcp/releases/latest/download/up-bank-mcp.mcpb">⬇ Download Up Bank MCP Bundle</a></p>
+          <a href="https://github.com/fane-ye/up-bank-mcp/releases/latest/download/up-bank-mcp.mcpb" style="display:inline-flex;align-items:center;gap:8px;background:#f04e23;color:white;font-weight:600;font-size:14px;padding:10px 20px;border-radius:100px;text-decoration:none;margin:4px 0 10px;box-shadow:0 2px 10px rgba(240,78,35,0.3);transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(240,78,35,0.4)'" onmouseout="this.style.transform='';this.style.boxShadow='0 2px 10px rgba(240,78,35,0.3)'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Up Bank Local MCP
+          </a>
           <p><strong>Option A</strong> — Double-click the <code>.mcpb</code> file and follow the prompts.</p>
           <p><strong>Option B</strong> — Open Claude Desktop → <strong>Settings → Extensions</strong> → drag the <code>.mcpb</code> file into the window.</p>
           <div class="screen-hint">📦 Claude Desktop · Settings → Extensions → drag .mcpb here</div>
@@ -309,7 +312,7 @@
         <div class="step-body">
           <h3>Paste your token in the install dialog</h3>
           <p>Claude Desktop will show an <strong>"Up Bank API Token"</strong> field. Paste your token from Step 1 and click Install.</p>
-          <p>Your token is saved to your OS keychain — Claude Desktop will never ask for it again.</p>
+          <p>Your token is encrypted and passed to the Up Bank Local MCP server.</p>
           <div class="screen-hint">🔑 Paste token → Install → Done</div>
         </div>
       </div>
@@ -318,7 +321,7 @@
         <div class="step-num">4</div>
         <div class="step-body">
           <h3>Restart Claude Desktop</h3>
-          <p>Fully quit Claude Desktop and reopen it. The Up Bank tools will be active in your next conversation.</p>
+          <p>Fully quit Claude Desktop and reopen it. The Up Bank Local MCP will be active in your next conversation.</p>
           <div class="screen-hint">⚡ Quit → Reopen → Start asking about your money</div>
         </div>
       </div>
@@ -351,13 +354,13 @@
       <div class="step">
         <div class="step-body">
           <h3>"Token invalid" or authentication error</h3>
-          <p>Your token may have expired. Visit <a href="https://api.up.com.au/getting_started" target="_blank">api.up.com.au</a> to create a new one, then reinstall the bundle.</p>
+          <p>Your token may have expired. Visit <a href="https://api.up.com.au/getting_started" target="_blank">api.up.com.au</a> to create a new one, then navigate to <strong>Settings → Extensions → Up Bank MCP → Configure</strong> and paste in your new token</p>
         </div>
       </div>
       <div class="step">
         <div class="step-body">
           <h3>Need to update your token</h3>
-          <p>Uninstall from Claude Desktop Settings, then drag in the <code>.mcpb</code> file again to re-enter your token.</p>
+          <p>Try the above steps. If they do not work uninstall from Claude Desktop Settings, then drag in the <code>.mcpb</code> file again to re-enter your token.</p>
         </div>
       </div>
     </div>
@@ -386,7 +389,7 @@
       <div class="step" style="flex-direction:column;gap:8px;">
         <h3 style="font-size:15px;font-weight:600;">🧠 Is your banking data used to train Claude?</h3>
         <p style="font-size:14px;color:var(--muted);">According to Anthropic, raw content from MCP servers is <strong>excluded from training data</strong> — unless it is directly copied into the chat itself. However, any banking data that Claude summarises or quotes in its responses becomes part of the conversation and <em>may</em> be used for training if you have model improvement enabled in your account settings.</p>
-        <p style="font-size:14px;color:var(--muted);margin-top:6px;"><strong>Recommended:</strong> disable model improvement for Claude, or use Incognito Mode for sensitive conversations. See below.</p>
+        <p style="font-size:14px;color:var(--muted);margin-top:6px;"><strong>Recommended:</strong> Disable model improvement for Claude, or use Incognito Mode for sensitive conversations. See below.</p>
       </div>
 
       <div class="step" style="flex-direction:column;gap:8px;">
