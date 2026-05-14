@@ -111,11 +111,15 @@ def list_accounts(
 ) -> str:
     """List all Up Bank accounts for the authenticated user.
 
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored.
+
     Args:
         account_type: Filter by account type — SAVER, TRANSACTIONAL, or HOME_LOAN.
         ownership_type: Filter by ownership — INDIVIDUAL or JOINT.
         max_results: Maximum number of accounts to return (default 500).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -151,10 +155,12 @@ def list_transactions(
     max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
-    """List transactions across all accounts. Auto-paginates up to the response size limit.
+    """List transactions across all accounts.
 
-    When next_cursor is present in the response, pass it as cursor to retrieve the next page.
-    Filters are ignored when cursor is provided — the cursor already encodes the original query.
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored; the cursor already encodes the
+    original filters and position.
 
     Args:
         since: ISO-8601 datetime to filter from, e.g. '2024-01-01T00:00:00+10:00'.
@@ -163,7 +169,7 @@ def list_transactions(
         category: Category slug to filter by, e.g. 'groceries', 'restaurants-and-cafes'.
         tag: Tag label to filter by.
         max_results: Maximum transactions to return (default 100, raise for large exports).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -204,10 +210,12 @@ def list_account_transactions(
     max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
-    """List transactions for a specific Up Bank account. Auto-paginates up to the response size limit.
+    """List transactions for a specific Up Bank account.
 
-    When next_cursor is present in the response, pass it as cursor to retrieve the next page.
-    Filters are ignored when cursor is provided — the cursor already encodes the original query.
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored; the cursor already encodes the
+    original filters and position.
 
     Args:
         account_id: The unique identifier for the account.
@@ -217,7 +225,7 @@ def list_account_transactions(
         category: Category slug to filter by.
         tag: Tag label to filter by.
         max_results: Maximum transactions to return (default 100).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -288,11 +296,15 @@ def list_tags(
     max_results: int = 500,
     cursor: Optional[str] = None,
 ) -> str:
-    """List all tags used across transactions. Auto-paginates up to the response size limit.
+    """List all tags used across transactions.
+
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored.
 
     Args:
         max_results: Maximum number of tags to return (default 500).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -334,11 +346,15 @@ def list_attachments(
     max_results: int = 200,
     cursor: Optional[str] = None,
 ) -> str:
-    """List all receipt/file attachments across transactions. Auto-paginates up to the response size limit.
+    """List all receipt/file attachments across transactions.
+
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored.
 
     Args:
         max_results: Maximum number of attachments to return (default 200).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -364,11 +380,15 @@ def list_webhooks(
     max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
-    """List all configured webhooks. Auto-paginates up to the response size limit.
+    """List all configured webhooks.
+
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored.
 
     Args:
         max_results: Maximum number of webhooks to return (default 100).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
@@ -428,12 +448,16 @@ def list_webhook_delivery_logs(
     max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
-    """List delivery log entries for a webhook showing success/failure history. Auto-paginates.
+    """List delivery log entries for a webhook showing success/failure history.
+
+    Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
+    also included — call this tool again with cursor=<next_cursor> to fetch the next page.
+    When cursor is supplied all other arguments are ignored.
 
     Args:
         webhook_id: The unique identifier for the webhook.
         max_results: Maximum number of log entries to return (default 100).
-        cursor: Pagination cursor returned as next_cursor from a previous call.
+        cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     if cursor:
         results, next_cursor = _get_paginated(cursor, None, max_results)
