@@ -37,9 +37,7 @@ def _get(path: str, params: dict | None = None) -> dict:
     return r.json()
 
 
-def _get_paginated(
-    path: str, params: dict | None = None, max_results: int = 500
-) -> tuple[list[dict], str | None]:
+def _get_paginated(path: str, params: dict | None = None) -> tuple[list[dict], str | None]:
     """Follow links.next cursors, stopping at page boundaries before exceeding _RESPONSE_SIZE_LIMIT.
 
     Returns (results, next_cursor). next_cursor is non-None when the size limit caused an early stop
@@ -53,7 +51,7 @@ def _get_paginated(
 
     while True:
         page = data.get("data", [])
-        candidate = (results + page)[:max_results]
+        candidate = results + page
 
         # Skip size check on the first page so we always return at least one page.
         if results and len(json.dumps(candidate, default=str, separators=(',', ':')).encode()) > _RESPONSE_SIZE_LIMIT:
@@ -63,7 +61,7 @@ def _get_paginated(
         results = candidate
         next_url = data.get("links", {}).get("next")
 
-        if not next_url or len(results) >= max_results:
+        if not next_url:
             return results, None
 
         # Next page URL already encodes all filters — no params needed.
@@ -106,12 +104,12 @@ def _paginated_ok(results: list[dict], next_cursor: str | None) -> str:
     return _ok(payload)
 
 
-def _list(path: str, params: dict, max_results: int, cursor: str | None) -> str:
+def _list(path: str, params: dict, cursor: str | None) -> str:
     """Fetch a paginated list. cursor resumes a previous call; path + params start a new one."""
     if cursor:
-        results, next_cursor = _get_paginated(cursor, None, max_results)
+        results, next_cursor = _get_paginated(cursor, None)
     else:
-        results, next_cursor = _get_paginated(path, params, max_results)
+        results, next_cursor = _get_paginated(path, params)
     return _paginated_ok(results, next_cursor)
 
 
@@ -151,7 +149,6 @@ def ping() -> str:
 def list_accounts(
     account_type: Optional[str] = None,
     ownership_type: Optional[str] = None,
-    max_results: int = 500,
     cursor: Optional[str] = None,
 ) -> str:
     """List all Up Bank accounts for the authenticated user.
@@ -163,7 +160,6 @@ def list_accounts(
     Args:
         account_type: Filter by account type — SAVER, TRANSACTIONAL, or HOME_LOAN.
         ownership_type: Filter by ownership — INDIVIDUAL or JOINT.
-        max_results: Maximum number of accounts to return (default 500).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
     params: dict = {"page[size]": 100}
@@ -171,7 +167,7 @@ def list_accounts(
         params["filter[accountType]"] = account_type
     if ownership_type:
         params["filter[ownershipType]"] = ownership_type
-    return _list("/accounts", params, max_results, cursor)
+    return _list("/accounts", params, cursor)
 
 
 @mcp.tool()
@@ -193,7 +189,6 @@ def list_transactions(
     status: Optional[str] = None,
     category: Optional[str] = None,
     tag: Optional[str] = None,
-    max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
     """List transactions across all accounts.
@@ -209,10 +204,9 @@ def list_transactions(
         status: Filter by status — HELD or SETTLED.
         category: Category slug to filter by, e.g. 'groceries', 'restaurants-and-cafes'.
         tag: Tag label to filter by.
-        max_results: Maximum transactions to return (default 100, raise for large exports).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list("/transactions", _transaction_params(since, until, status, category, tag), max_results, cursor)
+    return _list("/transactions", _transaction_params(since, until, status, category, tag), cursor)
 
 
 @mcp.tool()
@@ -233,7 +227,6 @@ def list_account_transactions(
     status: Optional[str] = None,
     category: Optional[str] = None,
     tag: Optional[str] = None,
-    max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
     """List transactions for a specific Up Bank account.
@@ -250,10 +243,9 @@ def list_account_transactions(
         status: Filter by status — HELD or SETTLED.
         category: Category slug to filter by.
         tag: Tag label to filter by.
-        max_results: Maximum transactions to return (default 100).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list(f"/accounts/{account_id}/transactions", _transaction_params(since, until, status, category, tag), max_results, cursor)
+    return _list(f"/accounts/{account_id}/transactions", _transaction_params(since, until, status, category, tag), cursor)
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
@@ -303,10 +295,7 @@ def update_transaction_category(
 # ── Tags ──────────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_tags(
-    max_results: int = 500,
-    cursor: Optional[str] = None,
-) -> str:
+def list_tags(cursor: Optional[str] = None) -> str:
     """List all tags used across transactions.
 
     Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
@@ -314,10 +303,9 @@ def list_tags(
     When cursor is supplied all other arguments are ignored.
 
     Args:
-        max_results: Maximum number of tags to return (default 500).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list("/tags", {"page[size]": 100}, max_results, cursor)
+    return _list("/tags", {"page[size]": 100}, cursor)
 
 
 @mcp.tool()
@@ -349,10 +337,7 @@ def remove_tags_from_transaction(transaction_id: str, tag_labels: list[str]) -> 
 # ── Attachments ───────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_attachments(
-    max_results: int = 200,
-    cursor: Optional[str] = None,
-) -> str:
+def list_attachments(cursor: Optional[str] = None) -> str:
     """List all receipt/file attachments across transactions.
 
     Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
@@ -360,10 +345,9 @@ def list_attachments(
     When cursor is supplied all other arguments are ignored.
 
     Args:
-        max_results: Maximum number of attachments to return (default 200).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list("/attachments", {"page[size]": 100}, max_results, cursor)
+    return _list("/attachments", {"page[size]": 100}, cursor)
 
 
 @mcp.tool()
@@ -379,10 +363,7 @@ def get_attachment(attachment_id: str) -> str:
 # ── Webhooks ──────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_webhooks(
-    max_results: int = 100,
-    cursor: Optional[str] = None,
-) -> str:
+def list_webhooks(cursor: Optional[str] = None) -> str:
     """List all configured webhooks.
 
     Returns {"data": [...]}. If results were cut short by the response size limit, next_cursor is
@@ -390,10 +371,9 @@ def list_webhooks(
     When cursor is supplied all other arguments are ignored.
 
     Args:
-        max_results: Maximum number of webhooks to return (default 100).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list("/webhooks", {"page[size]": 100}, max_results, cursor)
+    return _list("/webhooks", {"page[size]": 100}, cursor)
 
 
 @mcp.tool()
@@ -444,7 +424,6 @@ def ping_webhook(webhook_id: str) -> str:
 @mcp.tool()
 def list_webhook_delivery_logs(
     webhook_id: str,
-    max_results: int = 100,
     cursor: Optional[str] = None,
 ) -> str:
     """List delivery log entries for a webhook showing success/failure history.
@@ -455,10 +434,9 @@ def list_webhook_delivery_logs(
 
     Args:
         webhook_id: The unique identifier for the webhook.
-        max_results: Maximum number of log entries to return (default 100).
         cursor: Opaque pagination cursor from next_cursor in a previous response.
     """
-    return _list(f"/webhooks/{webhook_id}/logs", {"page[size]": 100}, max_results, cursor)
+    return _list(f"/webhooks/{webhook_id}/logs", {"page[size]": 100}, cursor)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
