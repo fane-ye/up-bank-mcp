@@ -122,9 +122,10 @@ def _list(path: str, params: dict, max_results: int, cursor: str | None) -> str:
     When cursor is supplied it is used as the starting URL (it already encodes all filters),
     so params are skipped. When there is no cursor, path + params are used for the first request.
     """
-    start_url = cursor if cursor else path
-    start_params = None if cursor else params
-    results, next_cursor = _get_paginated(start_url, start_params, max_results)
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        results, next_cursor = _get_paginated(path, params, max_results)
     return _paginated_ok(results, next_cursor)
 
 
