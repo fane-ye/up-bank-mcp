@@ -30,6 +30,8 @@ def _headers() -> dict:
 
 def _get(path: str, params: dict | None = None) -> dict:
     """Single GET request — path can be a full URL (pagination cursor) or a path."""
+    # If path is already a full URL (e.g. a links.next cursor), use it directly.
+    # Otherwise prefix with the base URL.
     url = path if path.startswith("http") else f"{UP_API_BASE}{path}"
     r = httpx.get(url, params=params, headers=_headers(), timeout=15)
     r.raise_for_status()
@@ -46,21 +48,35 @@ def _get_paginated(
     """
     results: list[dict] = []
     current_url: str = path
+
+    # Fetch the first page. Params (filters, page size) are only sent on the first request —
+    # subsequent pages use links.next URLs which already have everything baked in.
     data = _get(current_url, params)
 
     while True:
         page = data.get("data", [])
+
+        # Combine what we have so far with this new page, capped at max_results.
         candidate = (results + page)[:max_results]
 
+        # Size check: would adding this page push the response over the MCP limit?
+        # Skip the check on the very first page (results is empty) so we always return something.
         if results and len(json.dumps(candidate, default=str, separators=(',', ':')).encode()) > _RESPONSE_SIZE_LIMIT:
+            # This page doesn't fit. Return what we have and hand back the URL for this page
+            # as a cursor so the caller can resume from here on the next call.
             return results, current_url
 
+        # Page fits — commit it.
         results = candidate
+
+        # Check whether there is another page to fetch.
         next_url = data.get("links", {}).get("next")
 
         if not next_url or len(results) >= max_results:
+            # No more pages, or we've hit the caller's max_results cap — we're done.
             return results, None
 
+        # Advance to the next page. No params needed — they're encoded in the cursor URL.
         current_url = next_url
         data = _get(current_url)
 
@@ -88,10 +104,12 @@ def _delete(path: str, body: dict | None = None) -> None:
 
 
 def _ok(data: object) -> str:
+    # Compact separators remove whitespace between keys/values, keeping responses small.
     return json.dumps(data, default=str, separators=(',', ':'))
 
 
 def _paginated_ok(results: list[dict], next_cursor: str | None) -> str:
+    # Always wrap in {"data": [...]}. Only include next_cursor when there are more pages.
     payload: dict = {"data": results}
     if next_cursor:
         payload["next_cursor"] = next_cursor
@@ -99,8 +117,14 @@ def _paginated_ok(results: list[dict], next_cursor: str | None) -> str:
 
 
 def _list(path: str, params: dict, max_results: int, cursor: str | None) -> str:
-    """Fetch a paginated list, resuming from cursor if provided."""
-    results, next_cursor = _get_paginated(cursor or path, None if cursor else params, max_results)
+    """Fetch a paginated list, resuming from cursor if provided.
+
+    When cursor is supplied it is used as the starting URL (it already encodes all filters),
+    so params are skipped. When there is no cursor, path + params are used for the first request.
+    """
+    start_url = cursor if cursor else path
+    start_params = None if cursor else params
+    results, next_cursor = _get_paginated(start_url, start_params, max_results)
     return _paginated_ok(results, next_cursor)
 
 
@@ -111,6 +135,8 @@ def _transaction_params(
     category: str | None,
     tag: str | None,
 ) -> dict:
+    # Build the Up Bank API filter params for transaction list endpoints.
+    # Only include a key when the caller provided a value — omitting it means "no filter".
     params: dict = {"page[size]": 100}
     if since:
         params["filter[since]"] = since
