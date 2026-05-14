@@ -10,6 +10,7 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 UP_API_BASE = "https://api.up.com.au/api/v1"
+_RESPONSE_SIZE_LIMIT = 900_000  # bytes — stop at page boundaries before hitting MCP's 1MB limit
 
 mcp = FastMCP("up-bank")
 
@@ -35,17 +36,27 @@ def _get(path: str, params: dict | None = None) -> dict:
     return r.json()
 
 
-def _get_paginated(path: str, params: dict | None = None, max_results: int = 500) -> list[dict]:
-    """Follow `links.next` cursors until exhausted or max_results reached."""
+def _get_paginated(
+    path: str, params: dict | None = None, max_results: int = 500
+) -> tuple[list[dict], str | None]:
+    """Follow links.next cursors, stopping at page boundaries before exceeding _RESPONSE_SIZE_LIMIT.
+
+    Returns (results, next_cursor). next_cursor is non-None when the size limit caused an early stop
+    — pass it as the cursor argument on the next call to continue.
+    """
     results: list[dict] = []
     next_url: str | None = path
     first = True
     while next_url and len(results) < max_results:
         data = _get(next_url, params if first else None)
         first = False
-        results.extend(data.get("data", []))
+        page = data.get("data", [])
+        candidate = (results + page)[:max_results]
+        if results and len(json.dumps(candidate, default=str, separators=(',', ':')).encode()) > _RESPONSE_SIZE_LIMIT:
+            return results, next_url
+        results = candidate
         next_url = data.get("links", {}).get("next")
-    return results[:max_results]
+    return results, None
 
 
 def _post(path: str, body: dict) -> dict | None:
@@ -71,7 +82,14 @@ def _delete(path: str, body: dict | None = None) -> None:
 
 
 def _ok(data: object) -> str:
-    return json.dumps(data, default=str)
+    return json.dumps(data, default=str, separators=(',', ':'))
+
+
+def _paginated_ok(results: list[dict], next_cursor: str | None) -> str:
+    payload: dict = {"data": results}
+    if next_cursor:
+        payload["next_cursor"] = next_cursor
+    return _ok(payload)
 
 
 # ── Utility ───────────────────────────────────────────────────────────────────
@@ -89,6 +107,7 @@ def list_accounts(
     account_type: Optional[str] = None,
     ownership_type: Optional[str] = None,
     max_results: int = 500,
+    cursor: Optional[str] = None,
 ) -> str:
     """List all Up Bank accounts for the authenticated user.
 
@@ -96,13 +115,18 @@ def list_accounts(
         account_type: Filter by account type — SAVER, TRANSACTIONAL, or HOME_LOAN.
         ownership_type: Filter by ownership — INDIVIDUAL or JOINT.
         max_results: Maximum number of accounts to return (default 500).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    params: dict = {"page[size]": 100}
-    if account_type:
-        params["filter[accountType]"] = account_type
-    if ownership_type:
-        params["filter[ownershipType]"] = ownership_type
-    return _ok(_get_paginated("/accounts", params, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        params: dict = {"page[size]": 100}
+        if account_type:
+            params["filter[accountType]"] = account_type
+        if ownership_type:
+            params["filter[ownershipType]"] = ownership_type
+        results, next_cursor = _get_paginated("/accounts", params, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 @mcp.tool()
@@ -125,8 +149,12 @@ def list_transactions(
     category: Optional[str] = None,
     tag: Optional[str] = None,
     max_results: int = 100,
+    cursor: Optional[str] = None,
 ) -> str:
-    """List transactions across all accounts. Auto-paginates to return all matches.
+    """List transactions across all accounts. Auto-paginates up to the response size limit.
+
+    When next_cursor is present in the response, pass it as cursor to retrieve the next page.
+    Filters are ignored when cursor is provided — the cursor already encodes the original query.
 
     Args:
         since: ISO-8601 datetime to filter from, e.g. '2024-01-01T00:00:00+10:00'.
@@ -135,19 +163,24 @@ def list_transactions(
         category: Category slug to filter by, e.g. 'groceries', 'restaurants-and-cafes'.
         tag: Tag label to filter by.
         max_results: Maximum transactions to return (default 100, raise for large exports).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    params: dict = {"page[size]": 100}
-    if since:
-        params["filter[since]"] = since
-    if until:
-        params["filter[until]"] = until
-    if status:
-        params["filter[status]"] = status
-    if category:
-        params["filter[category]"] = category
-    if tag:
-        params["filter[tag]"] = tag
-    return _ok(_get_paginated("/transactions", params, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        params: dict = {"page[size]": 100}
+        if since:
+            params["filter[since]"] = since
+        if until:
+            params["filter[until]"] = until
+        if status:
+            params["filter[status]"] = status
+        if category:
+            params["filter[category]"] = category
+        if tag:
+            params["filter[tag]"] = tag
+        results, next_cursor = _get_paginated("/transactions", params, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 @mcp.tool()
@@ -169,8 +202,12 @@ def list_account_transactions(
     category: Optional[str] = None,
     tag: Optional[str] = None,
     max_results: int = 100,
+    cursor: Optional[str] = None,
 ) -> str:
-    """List transactions for a specific Up Bank account. Auto-paginates.
+    """List transactions for a specific Up Bank account. Auto-paginates up to the response size limit.
+
+    When next_cursor is present in the response, pass it as cursor to retrieve the next page.
+    Filters are ignored when cursor is provided — the cursor already encodes the original query.
 
     Args:
         account_id: The unique identifier for the account.
@@ -180,19 +217,24 @@ def list_account_transactions(
         category: Category slug to filter by.
         tag: Tag label to filter by.
         max_results: Maximum transactions to return (default 100).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    params: dict = {"page[size]": 100}
-    if since:
-        params["filter[since]"] = since
-    if until:
-        params["filter[until]"] = until
-    if status:
-        params["filter[status]"] = status
-    if category:
-        params["filter[category]"] = category
-    if tag:
-        params["filter[tag]"] = tag
-    return _ok(_get_paginated(f"/accounts/{account_id}/transactions", params, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        params: dict = {"page[size]": 100}
+        if since:
+            params["filter[since]"] = since
+        if until:
+            params["filter[until]"] = until
+        if status:
+            params["filter[status]"] = status
+        if category:
+            params["filter[category]"] = category
+        if tag:
+            params["filter[tag]"] = tag
+        results, next_cursor = _get_paginated(f"/accounts/{account_id}/transactions", params, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
@@ -242,13 +284,21 @@ def update_transaction_category(
 # ── Tags ──────────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_tags(max_results: int = 500) -> str:
-    """List all tags used across transactions. Auto-paginates.
+def list_tags(
+    max_results: int = 500,
+    cursor: Optional[str] = None,
+) -> str:
+    """List all tags used across transactions. Auto-paginates up to the response size limit.
 
     Args:
         max_results: Maximum number of tags to return (default 500).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    return _ok(_get_paginated("/tags", {"page[size]": 100}, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        results, next_cursor = _get_paginated("/tags", {"page[size]": 100}, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 @mcp.tool()
@@ -280,13 +330,21 @@ def remove_tags_from_transaction(transaction_id: str, tag_labels: list[str]) -> 
 # ── Attachments ───────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_attachments(max_results: int = 200) -> str:
-    """List all receipt/file attachments across transactions. Auto-paginates.
+def list_attachments(
+    max_results: int = 200,
+    cursor: Optional[str] = None,
+) -> str:
+    """List all receipt/file attachments across transactions. Auto-paginates up to the response size limit.
 
     Args:
         max_results: Maximum number of attachments to return (default 200).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    return _ok(_get_paginated("/attachments", {"page[size]": 100}, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        results, next_cursor = _get_paginated("/attachments", {"page[size]": 100}, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 @mcp.tool()
@@ -302,13 +360,21 @@ def get_attachment(attachment_id: str) -> str:
 # ── Webhooks ──────────────────────────────────────────────────────────────────
 
 @mcp.tool()
-def list_webhooks(max_results: int = 100) -> str:
-    """List all configured webhooks. Auto-paginates.
+def list_webhooks(
+    max_results: int = 100,
+    cursor: Optional[str] = None,
+) -> str:
+    """List all configured webhooks. Auto-paginates up to the response size limit.
 
     Args:
         max_results: Maximum number of webhooks to return (default 100).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    return _ok(_get_paginated("/webhooks", {"page[size]": 100}, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        results, next_cursor = _get_paginated("/webhooks", {"page[size]": 100}, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 @mcp.tool()
@@ -357,14 +423,23 @@ def ping_webhook(webhook_id: str) -> str:
 
 
 @mcp.tool()
-def list_webhook_delivery_logs(webhook_id: str, max_results: int = 100) -> str:
+def list_webhook_delivery_logs(
+    webhook_id: str,
+    max_results: int = 100,
+    cursor: Optional[str] = None,
+) -> str:
     """List delivery log entries for a webhook showing success/failure history. Auto-paginates.
 
     Args:
         webhook_id: The unique identifier for the webhook.
         max_results: Maximum number of log entries to return (default 100).
+        cursor: Pagination cursor returned as next_cursor from a previous call.
     """
-    return _ok(_get_paginated(f"/webhooks/{webhook_id}/logs", {"page[size]": 100}, max_results))
+    if cursor:
+        results, next_cursor = _get_paginated(cursor, None, max_results)
+    else:
+        results, next_cursor = _get_paginated(f"/webhooks/{webhook_id}/logs", {"page[size]": 100}, max_results)
+    return _paginated_ok(results, next_cursor)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
