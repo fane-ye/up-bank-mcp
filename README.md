@@ -147,4 +147,23 @@ gh release create v0.2.0 ./up-bank-mcp.mcpb \
   --notes "Describe what changed."
 ```
 
-The download URL in `docs/index.html` uses `/releases/latest/download/`
+4. Update the version and release date in `docs/index.html`:
+```html
+<!-- Find this line in the download button section and update it -->
+<div style="...">v0.2.0 · Released 15 June 2026</div>
+```
+
+5. Add an entry to `CHANGELOG.md`:
+```markdown
+## [v0.2.0] — 15 June 2026
+
+### Added
+- ...
+
+### Fixed
+- ...
+
+[v0.2.0]: https://github.com/fane-ye/up-bank-mcp/releases/tag/v0.2.0
+```
+
+The download URL in `docs/index.html` uses `/releases/latest/download/` so it always points to the newest release automatically — only the version label and date need updating manually.
